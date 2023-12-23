@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import numpy as np
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -13,6 +14,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QDockWidget,
+    QSlider,
 )
 from PyQt6.QtGui import QIcon, QPixmap, QTransform, QPainter, QAction, QGuiApplication
 from PyQt6.QtCore import Qt, QSize, QRect
@@ -160,6 +162,15 @@ from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
 #         self.setLayout(layout)
 
 
+def make_slider(lower: int, upper: int, interval: int, value: int) -> QSlider:
+    slider = QSlider(Qt.Orientation.Horizontal)
+    slider.setRange(min, max)
+    slider.setValue(value)
+    slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+    slider.setTickInterval(interval)
+    return slider
+
+
 class AppWindow(QMainWindow):
     """
     Primary window and entrypoint.
@@ -169,68 +180,103 @@ class AppWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         # setup window
-        self.setWindowTitle("Astro Viewer Main Window")
-        self.setFixedSize(1000, 600)
-        self.center_window()
+        self.setWindowTitle("Wavelet Kit")
+        self.setFixedSize(1200, 600)
+        self._center_window()
 
         # setup central widgets and set to placeholder
-        self.build_image_placeholder()
+        self._build_file_dialog()
         self.setCentralWidget(self.image_placeholder)
         self.image = QPixmap()
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.build_toolbar()
+        # setup toolbar
+        self._build_toolbar()
+
+        # setup state tracking variables
+        # should we maybe use a dict/object for represting state?
+        self.current_file = None
+        self.scale_factor = 1
+
         self.show()
 
-    def build_toolbar(self):
+    # INTERNAL HELPERS
+
+    def _center_window(self):
+        frame = self.frameGeometry()
+        center = QGuiApplication.primaryScreen().availableGeometry().center()
+        frame.moveCenter(center)
+        self.move(frame.topLeft())
+
+    def _build_file_dialog(self):
+        # initialize container widget
+        self.image_placeholder = QWidget()
+        layout = QVBoxLayout()
+        layout.addStretch()
+
+        # create and attach text label
+        label = QLabel("Click to select a file")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+
+        # create and attach file dialog button
+        browse_button = QPushButton("Open")
+        browse_button.clicked.connect(self.handle_open_file)
+        browse_button.setFixedSize(100, 60)
+        layout.addWidget(browse_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        layout.addStretch()
+        self.image_placeholder.setLayout(layout)
+
+    def _render_image_label(self):
+        dim = self.image_placeholder.frameGeometry()
+        print(dim)
+        self.image_label.setPixmap(
+            # self.image
+            self.image.scaled(
+                QSize(
+                    int(dim.width() * self.scale_factor),
+                    int(dim.height() * self.scale_factor),
+                ),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        self.setCentralWidget(self.image_label)
+        print(self.image_label.frameGeometry())
+
+    # TOOLBAR
+
+    def _build_toolbar(self):
+        # toolbar container widget
         self.toolbar = QDockWidget()
         self.toolbar.setWindowTitle("Tools")
         self.toolbar.setAllowedAreas(
             Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
         )
+        # parent widget for all widgets inside the toolbar
         toolbar_contents = QWidget()
+        # layout
         toolbar_layout = QVBoxLayout()
-        test_button = QPushButton("Test")
-        test_button.setMinimumWidth(200)
-        toolbar_layout.addWidget(test_button)
+
+        # 2x zoom button
+        zoom_button = QPushButton("Zoom In")
+        zoom_button.setMinimumWidth(300)
+        zoom_button.clicked.connect(self.handle_zoom_in)
+        toolbar_layout.addWidget(zoom_button)
+
+        # zoom out button
+        zoom_button = QPushButton("Zoom Out")
+        zoom_button.setMinimumWidth(300)
+        toolbar_layout.addWidget(zoom_button)
+
         toolbar_layout.addStretch()
         toolbar_contents.setLayout(toolbar_layout)
         self.toolbar.setWidget(toolbar_contents)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.toolbar)
 
-    def build_image_placeholder(self):
-        self.image_placeholder = QWidget()
-        layout = QVBoxLayout()
-        layout.addStretch()
-        # text label
-        label = QLabel("Click to select a file")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-        # file dialog button
-        browse_button = QPushButton("Open")
-        browse_button.clicked.connect(self.handle_open_file)
-        browse_button.setFixedSize(100, 60)
-        layout.addWidget(browse_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        # selected file stuff, need to keep track of the file path
-        self.current_file = None
-        self.debug_label = QLabel("Selected:")
-        self.debug_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.debug_label)
-        layout.addStretch()
-        self.image_placeholder.setLayout(layout)
-
-    def build_image_container(self):
-        self.image = QPixmap(self.current_file)
-        dim = self.image_placeholder.frameGeometry()
-        self.image_label.setPixmap(
-            # self.image
-            self.image.scaled(
-                QSize(dim.width(), dim.height()),
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        )
+    # BUTTON HANDLERS
 
     def handle_open_file(self):
         filename, _ = QFileDialog.getOpenFileName(
@@ -242,26 +288,18 @@ class AppWindow(QMainWindow):
         if filename:
             path = Path(filename)
             self.current_file = str(path)
-            self.debug_label.setText(f"Selected: {self.current_file}")
             print(self.current_file)
+            self.image = QPixmap(self.current_file)
+            self._render_image_label()
 
-            self.build_image_container()
-            self.setCentralWidget(self.image_label)
+    def handle_zoom_in(self):
+        # modify scale factor
+        self.scale_factor = np.min([int(self.scale_factor * 2), 2])
+        self._render_image_label()
+        # self.setCentralWidget(self.image_label)
 
-            # self.image = QPixmap(self.current_file)
-            # self.debug_label.setPixmap(
-            #     self.image.scaled(
-            #         self.debug_label.size(),
-            #         Qt.AspectRatioMode.KeepAspectRatio,
-            #         Qt.TransformationMode.SmoothTransformation,
-            #     )
-            # )
-
-    def center_window(self):
-        frame = self.frameGeometry()
-        center = QGuiApplication.primaryScreen().availableGeometry().center()
-        frame.moveCenter(center)
-        self.move(frame.topLeft())
+    def handle_zoom_out(self):
+        pass
 
 
 if __name__ == "__main__":

@@ -1,2 +1,2 @@
 dev:
-	poetry run python3 test.py
+	poetry run python3 app.py
