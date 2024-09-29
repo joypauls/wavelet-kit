@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "color-space-explorer"
+name = "wavelet-kit"
 version = "0.1.0"
 description = ""
 authors = ["joypauls <joypaulsen3@gmail.com>"]
@@ -9,6 +9,8 @@ readme = "README.md"
 python = "^3.11"
 streamlit = "^1.38.0"
 opencv-python = "^4.10.0.84"
+ipykernel = "^6.29.5"
+matplotlib = "^3.9.2"
 
 
 [build-system]
