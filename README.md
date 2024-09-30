@@ -4,13 +4,13 @@
 
 A tool for image deconvolution focused on planetary imaging
 
-<div style="text-align: center;">
-    <img width="50%" src="./morlet_wavelet_visual.svg">
+<div align="center">
+    <img width="60%" src="./morlet_wavelet_visual.svg">
 </div>
 
 ## Experimental Results
 
-<div style="text-align: center;">
+<div align="center">
     <img src="./test_results.png">
 </div>
 
