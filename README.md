@@ -1,9 +1,17 @@
+⚠️ _This project is a prototype. Use at your own risk._
+
 # Wavelet Kit
 
 A tool for image deconvolution focused on planetary imaging
 
 <div style="text-align: center;">
-    <img width="100%" src="./morlet_wavelet_visual.svg">
+    <img width="50%" src="./morlet_wavelet_visual.svg">
+</div>
+
+## Experimental Results
+
+<div style="text-align: center;">
+    <img src="./test_results.png">
 </div>
 
 ## Development
