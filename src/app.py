@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+import cv2
 
 from prototype_algorithm import atrous_wavelet_deconvolution
 
@@ -42,7 +42,7 @@ def main():
 
     # Load a local test image
     test_image_path = "./src/images/stacked_jupiter.tiff"
-    image = Image.open(test_image_path)
+    image = cv2.imread(test_image_path, cv2.IMREAD_UNCHANGED)
 
     st.set_page_config(
         page_title="App",
@@ -56,18 +56,28 @@ def main():
         return
 
     if image is not None:
-        st.markdown(layer_gain_values)
+        # st.markdown(layer_gain_values)
 
         reconstructed_image = atrous_wavelet_deconvolution(
             image, len(layer_gain_values), layer_gain_values, color=True
         )
 
+        reconstructed_image_8bit = cv2.normalize(
+            reconstructed_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
+        )
+        image_8bit = cv2.normalize(
+            image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
+        )
+
         # st.markdown(reconstructed_image)
 
+        show_original = st.toggle("Show Original Image", False)
+
         st.image(
-            reconstructed_image,
-            caption="Original Image",
+            image_8bit if show_original else reconstructed_image_8bit,
+            caption="Original Image" if show_original else "Processed Image",
             use_column_width=True,
+            channels="BGR",
         )
 
     else:
