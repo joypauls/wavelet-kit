@@ -42,6 +42,11 @@ def main():
     test_image_path = "./src/images/stacked_jupiter.tiff"
     image = cv2.imread(test_image_path)
 
+    st.set_page_config(
+        page_title="App",
+        page_icon="",
+    )
+
     wavelet, layer_gain_values = build_sidebar()
 
     if image is None:
@@ -60,5 +65,4 @@ def main():
         st.error("Failed to load the test image.")
 
 
-if __name__ == "__main__":
-    main()
+main()
