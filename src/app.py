@@ -10,7 +10,7 @@ DEFAULT_LAYERS = 6
 MIN_LAYERS = 1
 MAX_LAYERS = 8
 MIN_LAYER_GAIN = 0.0
-MAX_LAYER_GAIN = 20.0
+MAX_LAYER_GAIN = 30.0
 
 
 def build_sidebar():
@@ -61,7 +61,6 @@ def main():
         reconstructed_image = atrous_wavelet_deconvolution(
             image, len(layer_gain_values), layer_gain_values, color=True
         )
-
         reconstructed_image_8bit = cv2.normalize(
             reconstructed_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
         )
